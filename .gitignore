@@ -1,0 +1,59 @@
+# Dependencies
+node_modules
+dist
+.npm/
+.pnpm-store/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# SSL Certificates & Keys
+*.pem
+*.key
+*.crt
+*.p12
+
+# Build outputs
+server/public
+vite.config.ts.*
+
+# Logs
+*.log
+logs/
+caddy.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+.tmp/
+.temp/
+.cache/
+.local/
+.config/
+.bad/
+
+# Archives
+*.tar.gz
+*.zip
+
+# TypeScript
+*.tsbuildinfo
+
+# PM2
+ecosystem.config.js
+.pm2/
+# Claude
+.claude/
+.bad

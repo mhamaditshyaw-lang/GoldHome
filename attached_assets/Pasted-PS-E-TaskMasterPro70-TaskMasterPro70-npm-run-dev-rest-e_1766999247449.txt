@@ -1,0 +1,55 @@
+PS E:\TaskMasterPro70\TaskMasterPro70> npm run dev
+
+> rest-express@1.0.0 dev
+> cross-env NODE_ENV=development tsx server/index.ts
+
+11:58:32 AM [express] serving on 0.0.0.0:5000
+Starting reminder notification service...
+Reminder notification service started successfully
+Checking for due reminders...
+Database operation failed: TypeError: Cannot read properties of undefined (reading 'sear
+chParams')
+    at parse (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-connection-string\index
+.js:39:30)
+    at new ConnectionParameters (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg\lib\
+connection-parameters.js:56:42)
+    at new Client (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg\lib\client.js:18:3
+3)
+    at BoundPool.newClient (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\inde
+x.js:233:20)
+    at BoundPool.connect (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\index.
+js:227:10)
+    at BoundPool.query (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\index.js
+:411:10)
+    at <anonymous> (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\node-postgres\se
+ssion.ts:110:19)
+    at Object.startActiveSpan (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\traci
+ng.ts:27:11)
+    at <anonymous> (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\node-postgres\se
+ssion.ts:104:32)
+    at Object.startActiveSpan (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\traci
+ng.ts:27:11)
+Error in reminder notification service: TypeError: Cannot read properties of undefined (
+reading 'searchParams')
+    at parse (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-connection-string\index
+.js:39:30)
+    at new ConnectionParameters (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg\lib\
+connection-parameters.js:56:42)
+    at new Client (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg\lib\client.js:18:3
+3)
+    at BoundPool.newClient (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\inde
+x.js:233:20)
+    at BoundPool.connect (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\index.
+js:227:10)
+    at BoundPool.query (E:\TaskMasterPro70\TaskMasterPro70\node_modules\pg-pool\index.js
+:411:10)
+    at <anonymous> (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\node-postgres\se
+ssion.ts:110:19)
+    at Object.startActiveSpan (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\traci
+ng.ts:27:11)
+    at <anonymous> (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\node-postgres\se
+ssion.ts:104:32)
+    at Object.startActiveSpan (E:\TaskMasterPro70\TaskMasterPro70\node_modules\src\traci
+ng.ts:27:11)
+Initial reminder check skipped due to database connection issue. Will retry on next inte
+rval.
