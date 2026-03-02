@@ -70,7 +70,11 @@
     "more": "More options",
     "chooseImage": "Choose Image",
     "imageRemoved": "Image Removed",
-    "processingImage": "Processing Image"
+    "processingImage": "Processing Image",
+    "of": "of",
+    "page": "Page",
+    "records": "records",
+    "show": "Show"
   },
   "auth": {
     "login": "Login",
@@ -570,7 +574,21 @@
     "salaryTaxiOther": "Salary + Taxi + Other",
     "invoiceNumber": "Invoice #",
     "employeeId": "Employee ID",
-    "services": "Services"
+    "services": "Services",
+    "customerName": "Customer Name",
+    "employeeDailySalary": "Employee Daily Salary",
+    "noExpenseData": "No expense data",
+    "noExpensesFound": "No expenses found",
+    "noMaterialsFound": "No materials found",
+    "noServiceRevenueData": "No service revenue data",
+    "otherExpensesLabel": "Other Expenses",
+    "status": "Status",
+    "taxiExpenses": "Taxi Expenses",
+    "totalAmount": "Total Amount",
+    "totalExpensesLabel": "Total Expenses",
+    "totalRevenueLabel": "Total Revenue",
+    "netIncomeLabel": "Net Income",
+    "afterExpenses": "After expenses"
   },
   "sidebar": {
     "overview": "Overview",

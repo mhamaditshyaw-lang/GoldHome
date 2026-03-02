@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Filter, Download, FileText, Calendar, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Filter, Download, FileText, Calendar, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { exportInvoiceToPDF, exportInvoiceListToPDF } from "@/lib/pdf-export";
 import { Invoice } from "@shared/schema";
 import { format } from "date-fns";
@@ -41,6 +41,8 @@ export default function Invoices() {
   const [endDate, setEndDate] = useState("");
 
   const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<InvoiceWithCleaner | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Close form when language changes
   useEffect(() => {
@@ -126,6 +128,9 @@ export default function Invoices() {
     },
   });
 
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter, startDate, endDate]);
+
   const filteredInvoices = invoices?.filter(invoice => {
     const matchesSearch =
       invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,6 +150,9 @@ export default function Invoices() {
 
     return matchesSearch && matchesStatus && matchesStartDate && matchesEndDate;
   }) ?? [];
+
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -273,18 +281,9 @@ export default function Invoices() {
           </div>
         </div>
 
-        {/* Filters with Tabs */}
+        {/* Filters */}
         <Card className="mt-6">
           <CardContent className="p-6">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-4" data-testid="invoice-status-tabs">
-                <TabsTrigger value="all" data-testid="tab-all">{t('invoices.allStatus')}</TabsTrigger>
-                <TabsTrigger value="pending" data-testid="tab-pending">{t('invoices.pending')}</TabsTrigger>
-                <TabsTrigger value="completed" data-testid="tab-completed">{t('invoices.completed')}</TabsTrigger>
-                <TabsTrigger value="cancelled" data-testid="tab-cancelled">{t('invoices.cancelled')}</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
@@ -415,7 +414,7 @@ export default function Invoices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredInvoices.map((invoice) => (
+                  {paginatedInvoices.map((invoice) => (
                     <TableRow key={invoice.id} data-testid={`invoice-row-${invoice.id}`}>
                       <TableCell className="font-medium" data-testid={`customer-name-${invoice.id}`}>
                         {invoice.customerName}
@@ -477,6 +476,49 @@ export default function Invoices() {
                   ))}
                 </TableBody>
               </Table>
+            )}
+            {filteredInvoices.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 border-t">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 font-medium">Show:</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-20 h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-600">of {filteredInvoices.length} records</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9">
+                    <ChevronLeft className="h-4 w-4 mr-1" />Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      return (
+                        <Button key={pageNum} variant={currentPage === pageNum ? "default" : "outline"} size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-9 w-9 p-0 ${currentPage === pageNum ? 'bg-purple-700 hover:bg-purple-800 text-white' : 'hover:bg-purple-50'}`}>
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9">
+                    Next<ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+                <div className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages}</div>
+              </div>
             )}
           </CardContent>
         </Card>

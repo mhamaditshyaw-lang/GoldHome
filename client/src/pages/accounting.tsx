@@ -263,7 +263,8 @@ export default function Accounting() {
     return sum + materialsSum + (materialsList.length === 0 ? singlePrice : 0);
   }, 0);
 
-  const remainingAmount = totalRevenue - totalDailySalaries - totalTaxiExpenses - totalExpenses;
+  // Cash balance excludes uncollected credit sales (unpaidDebts) — only actual received cash
+  const remainingAmount = totalRevenue - totalDailySalaries - totalTaxiExpenses - totalExpenses - unpaidDebts;
 
   // Revenue by service type
   const revenueByService = filteredInvoices.reduce((acc, invoice) => {
@@ -517,7 +518,7 @@ export default function Accounting() {
           <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/20 rounded-full -mr-16 -mt-16" />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-              <CardTitle className="text-xs font-bold uppercase tracking-wider text-blue-800">{t("accounting.remainingAmount")}</CardTitle>
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-blue-800">{t("accounting.remainingAmount")} (Cash)</CardTitle>
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
@@ -527,7 +528,7 @@ export default function Accounting() {
                 {formatCurrency(remainingAmount)}
               </div>
               <p className="text-xs text-blue-600/80 font-medium">
-                {t("accounting.afterExpenses")}
+                After expenses & uncollected credit sales
               </p>
             </CardContent>
           </Card>
@@ -1240,7 +1241,7 @@ export default function Accounting() {
                     {filteredInvoices.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-4">{t("accounting.noInvoicesFound")}</p>
                     ) : (
-                      filteredInvoices.slice(0, 5).map((invoice) => (
+                      filteredInvoices.slice((invoicesCurrentPage - 1) * invoicesItemsPerPage, invoicesCurrentPage * invoicesItemsPerPage).map((invoice) => (
                         <div key={invoice.id} className="flex justify-between items-center p-3 rounded-lg bg-white/60 hover:bg-white/90 transition-colors shadow-sm">
                           <div>
                             <div className="text-sm font-semibold text-gray-800">{invoice.customerName}</div>
@@ -1253,6 +1254,49 @@ export default function Accounting() {
                       ))
                     )}
                   </div>
+                  {filteredInvoices.length > 0 && (() => {
+                    const totalPages = Math.ceil(filteredInvoices.length / invoicesItemsPerPage);
+                    return (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t mt-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">{t("common.show")}:</span>
+                          <Select value={invoicesItemsPerPage.toString()} onValueChange={(v) => { setInvoicesItemsPerPage(Number(v)); setInvoicesCurrentPage(1); }}>
+                            <SelectTrigger className="w-16 h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="10">10</SelectItem>
+                              <SelectItem value="20">20</SelectItem>
+                              <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-gray-500">{t("common.of")} {filteredInvoices.length}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="outline" size="sm" onClick={() => setInvoicesCurrentPage(p => Math.max(1, p - 1))} disabled={invoicesCurrentPage === 1} className="h-8 px-2">
+                            <ChevronLeft className="h-3 w-3" />
+                          </Button>
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) pageNum = i + 1;
+                            else if (invoicesCurrentPage <= 3) pageNum = i + 1;
+                            else if (invoicesCurrentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                            else pageNum = invoicesCurrentPage - 2 + i;
+                            return (
+                              <Button key={pageNum} variant={invoicesCurrentPage === pageNum ? "default" : "outline"} size="sm"
+                                onClick={() => setInvoicesCurrentPage(pageNum)}
+                                className={`h-8 w-8 p-0 text-xs ${invoicesCurrentPage === pageNum ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'hover:bg-blue-50'}`}>
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                          <Button variant="outline" size="sm" onClick={() => setInvoicesCurrentPage(p => Math.min(totalPages, p + 1))} disabled={invoicesCurrentPage === totalPages} className="h-8 px-2">
+                            <ChevronRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="text-xs text-gray-500">{t("common.page")} {invoicesCurrentPage} {t("common.of")} {totalPages}</span>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
@@ -1463,7 +1507,7 @@ export default function Accounting() {
                     {filteredExpenses.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-4">{t("accounting.noExpensesFound")}</p>
                     ) : (
-                      filteredExpenses.slice(0, 5).map((expense) => (
+                      filteredExpenses.slice((expensesCurrentPage - 1) * expensesItemsPerPage, expensesCurrentPage * expensesItemsPerPage).map((expense) => (
                         <div key={expense.id} className="flex justify-between items-center p-3 rounded-lg bg-white/60 hover:bg-white/90 transition-colors shadow-sm">
                           <div>
                             <div className="text-sm font-semibold text-gray-800">{expense.description}</div>
@@ -1476,6 +1520,49 @@ export default function Accounting() {
                       ))
                     )}
                   </div>
+                  {filteredExpenses.length > 0 && (() => {
+                    const totalPages = Math.ceil(filteredExpenses.length / expensesItemsPerPage);
+                    return (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t mt-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">{t("common.show")}:</span>
+                          <Select value={expensesItemsPerPage.toString()} onValueChange={(v) => { setExpensesItemsPerPage(Number(v)); setExpensesCurrentPage(1); }}>
+                            <SelectTrigger className="w-16 h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="10">10</SelectItem>
+                              <SelectItem value="20">20</SelectItem>
+                              <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-gray-500">{t("common.of")} {filteredExpenses.length}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="outline" size="sm" onClick={() => setExpensesCurrentPage(p => Math.max(1, p - 1))} disabled={expensesCurrentPage === 1} className="h-8 px-2">
+                            <ChevronLeft className="h-3 w-3" />
+                          </Button>
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) pageNum = i + 1;
+                            else if (expensesCurrentPage <= 3) pageNum = i + 1;
+                            else if (expensesCurrentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                            else pageNum = expensesCurrentPage - 2 + i;
+                            return (
+                              <Button key={pageNum} variant={expensesCurrentPage === pageNum ? "default" : "outline"} size="sm"
+                                onClick={() => setExpensesCurrentPage(pageNum)}
+                                className={`h-8 w-8 p-0 text-xs ${expensesCurrentPage === pageNum ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'hover:bg-orange-50'}`}>
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                          <Button variant="outline" size="sm" onClick={() => setExpensesCurrentPage(p => Math.min(totalPages, p + 1))} disabled={expensesCurrentPage === totalPages} className="h-8 px-2">
+                            <ChevronRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="text-xs text-gray-500">{t("common.page")} {expensesCurrentPage} {t("common.of")} {totalPages}</span>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
@@ -1540,11 +1627,22 @@ export default function Accounting() {
                         </TableCell>
                         <TableCell className="text-right text-red-600 font-semibold">({formatCurrency(totalExpenses)})</TableCell>
                       </TableRow>
+                      {unpaidDebts > 0 && (
+                        <TableRow className="hover:bg-pink-50/50 transition-colors">
+                          <TableCell className="pl-8 text-gray-700 font-medium py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-pink-600">−</span>
+                              Credit Sales — Uncollected (Receivable)
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right text-pink-600 font-semibold">({formatCurrency(unpaidDebts)})</TableCell>
+                        </TableRow>
+                      )}
                       <TableRow className="border-t-2 border-cyan-300 bg-gradient-to-r from-cyan-50 to-teal-50 hover:from-cyan-100 hover:to-teal-100 transition-colors">
                         <TableCell className="font-bold text-gray-900 py-5 text-base">
                           <div className="flex items-center gap-2">
                             <div className={`h-3 w-3 rounded-full ${remainingAmount >= 0 ? 'bg-blue-500' : 'bg-red-500'}`}></div>
-                            {t("accounting.netIncome")} / {t("accounting.remainingAmount")}
+                            Cash Balance (Collected)
                           </div>
                         </TableCell>
                         <TableCell className={`text-right font-bold text-2xl py-5 ${remainingAmount >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
@@ -1563,10 +1661,10 @@ export default function Accounting() {
                   </div>
                   <div className="p-4 rounded-xl bg-gradient-to-br from-red-100 to-rose-100 border border-red-200">
                     <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">{t("accounting.totalExpensesLabel")}</p>
-                    <p className="text-xl font-bold text-red-800">{formatCurrency(totalDailySalaries + totalTaxiExpenses + totalExpenses)}</p>
+                    <p className="text-xl font-bold text-red-800">{formatCurrency(totalDailySalaries + totalTaxiExpenses + totalExpenses + unpaidDebts)}</p>
                   </div>
                   <div className={`p-4 rounded-xl bg-gradient-to-br border ${remainingAmount >= 0 ? 'from-blue-100 to-cyan-100 border-blue-200' : 'from-red-100 to-rose-100 border-red-200'}`}>
-                    <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${remainingAmount >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{t("accounting.netIncomeLabel")}</p>
+                    <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${remainingAmount >= 0 ? 'text-blue-700' : 'text-red-700'}`}>Cash Balance</p>
                     <p className={`text-xl font-bold ${remainingAmount >= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatCurrency(remainingAmount)}</p>
                   </div>
                 </div>

@@ -3,7 +3,6 @@ import {
   Home,
   Receipt,
   Users,
-  MapPin,
   DollarSign,
   BarChart3,
   X,
@@ -18,7 +17,6 @@ import {
   Shield,
   ChevronDown,
   ChevronRight,
-  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   Code,
@@ -26,7 +24,7 @@ import {
   History,
   Cloud,
   Database,
-  Smartphone,
+  ChevronUp,
 } from "lucide-react";
 import { authManager } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -184,6 +182,228 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+// ─── Nav Link ─────────────────────────────────────────────────────────────────
+
+function NavLink({
+  item,
+  isActive,
+  onClick,
+  collapsed = false,
+}: {
+  item: { name: string; href: string; icon: React.ElementType };
+  isActive: boolean;
+  onClick?: () => void;
+  collapsed?: boolean;
+}) {
+  const Icon = item.icon;
+
+  if (collapsed) {
+    return (
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={item.href}>
+              <motion.span
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                className={cn(
+                  "flex items-center justify-center p-2.5 rounded-xl cursor-pointer transition-all duration-200 mx-2",
+                  isActive
+                    ? "bg-purple-50 text-purple-700"
+                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px]",
+                    isActive ? "text-purple-600" : "",
+                  )}
+                  strokeWidth={1.75}
+                />
+              </motion.span>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 text-xs">
+            <p>{item.name}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <Link href={item.href}>
+      <motion.span
+        whileHover={{ x: 1 }}
+        whileTap={{ scale: 0.99 }}
+        onClick={onClick}
+        className={cn(
+          "group relative flex items-center gap-3 mx-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200",
+          isActive
+            ? "bg-purple-50 text-purple-700"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+        )}
+        data-testid={`link-${item.name.replace(/\s+/g, "-").toLowerCase()}`}
+      >
+        {/* Active left-bar indicator */}
+        {isActive && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-purple-600 rounded-r-full" />
+        )}
+
+        {/* Icon box */}
+        <div
+          className={cn(
+            "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-200",
+            isActive
+              ? "bg-purple-100"
+              : "bg-transparent group-hover:bg-gray-100",
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-[16px] w-[16px] transition-colors duration-200",
+              isActive
+                ? "text-purple-600"
+                : "text-gray-400 group-hover:text-gray-600",
+            )}
+            strokeWidth={1.75}
+          />
+        </div>
+
+        {/* Label */}
+        <span
+          className={cn(
+            "text-sm font-medium leading-none",
+            isActive ? "text-purple-700" : "",
+          )}
+        >
+          {item.name}
+        </span>
+      </motion.span>
+    </Link>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHeader({
+  title,
+  collapsed: sectionCollapsed,
+  onToggle,
+  sidebarCollapsed,
+}: {
+  title: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  sidebarCollapsed: boolean;
+}) {
+  if (sidebarCollapsed) {
+    return <div className="h-px mx-3 my-2 bg-gray-100" />;
+  }
+
+  return (
+    <button
+      onClick={onToggle}
+      className="group w-full flex items-center justify-between px-4 pt-5 pb-1.5 transition-colors"
+    >
+      <span className="text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]">
+        {title}
+      </span>
+      <motion.span
+        animate={{ rotate: sectionCollapsed ? 0 : 90 }}
+        transition={{ type: "spring", stiffness: 250, damping: 18 }}
+        className="text-gray-300 group-hover:text-gray-400 transition-colors"
+      >
+        <ChevronRight className="h-3 w-3" />
+      </motion.span>
+    </button>
+  );
+}
+
+// ─── Profile Card ─────────────────────────────────────────────────────────────
+
+function ProfileCard({
+  user,
+  collapsed,
+}: {
+  user: AuthState["user"];
+  collapsed: boolean;
+}) {
+  if (!user) return null;
+
+  if (collapsed) {
+    return (
+      <div className="px-2 py-3 flex justify-center">
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="relative cursor-default">
+                <img
+                  className="h-9 w-9 rounded-xl object-cover border border-gray-100 shadow-sm"
+                  src={
+                    user.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`
+                  }
+                  alt={user.name}
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700">
+              <p className="font-semibold text-sm">{user.name}</p>
+              <p className="text-xs text-gray-300 capitalize">{user.role}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-3 mt-4 mb-1">
+      <div className="bg-gray-50 rounded-xl p-3 border border-gray-100/80">
+        <div className="flex items-center gap-3">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <img
+              className="h-10 w-10 rounded-xl object-cover border border-gray-200 shadow-sm"
+              src={
+                user.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=7C3AED&color=fff`
+              }
+              alt={user.name}
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800 truncate leading-tight">
+              {user.name}
+            </p>
+            <p className="text-[11px] text-gray-500 capitalize mt-0.5 font-medium">
+              {user.role === "admin"
+                ? "Administrator"
+                : user.role === "supervisor"
+                ? "Supervisor"
+                : "Cleaner"}
+            </p>
+          </div>
+
+          {/* Online dot */}
+          <div className="flex-shrink-0 flex items-center gap-1">
+            <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded-full">
+              Online
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Sidebar ─────────────────────────────────────────────────────────────
+
 export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const [location] = useLocation();
   const [authState, setAuthState] = useState<AuthState>(authManager.getState());
@@ -191,201 +411,325 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { t } = useLanguage();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<
-    Record<string, boolean>
-  >({});
-
-  useEffect(() => {
-    const allCollapsed = getNavigationSections(t).reduce(
-      (acc, section) => {
-        acc[section.title] = true;
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-    setCollapsedSections(allCollapsed);
-  }, []);
+  // Start all sections expanded (MUI Minimal style — no collapsed by default)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const unsubscribe = authManager.subscribe(setAuthState);
     return unsubscribe;
   }, []);
 
-  const toggleSection = (sectionTitle: string) => {
-    setCollapsedSections((prev) => ({
-      ...prev,
-      [sectionTitle]: !prev[sectionTitle],
-    }));
-  };
+  const toggleSection = (title: string) =>
+    setCollapsedSections((prev) => ({ ...prev, [title]: !prev[title] }));
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  const expandAllSections = () => {
-    setCollapsedSections({});
-  };
-
-  const collapseAllSections = () => {
-    const allSections = getNavigationSections(t).reduce(
-      (acc, section) => {
-        acc[section.title] = true;
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
-    setCollapsedSections(allSections);
-  };
+  const toggleSidebar = () => setIsCollapsed((v) => !v);
 
   const user = authState.user;
   const navigationSections = getNavigationSections(t);
 
-  const filteredNavigationSections = navigationSections
+  const filteredSections = navigationSections
     .map((section) => {
-      // Section level permission check
       let sectionEnabled = true;
-      if (section.title === t("sidebar.businessOperations")) {
+      if (section.title === t("sidebar.businessOperations"))
         sectionEnabled = isPageEnabled("section_business_operations");
-      } else if (section.title === t("sidebar.schedulingAssignments")) {
+      else if (section.title === t("sidebar.schedulingAssignments"))
         sectionEnabled = isPageEnabled("section_scheduling_assignments");
-      } else if (section.title === t("sidebar.teamTracking")) {
+      else if (section.title === t("sidebar.teamTracking"))
         sectionEnabled = isPageEnabled("section_team_tracking");
-      }
 
-      if (!sectionEnabled) {
-        return { ...section, items: [] };
-      }
+      if (!sectionEnabled) return { ...section, items: [] };
 
       return {
         ...section,
         items: section.items.filter((item) => {
-          if (item.settingKey === "admin") {
-            return user?.role === "admin";
-          }
-          if (item.settingKey === "settings") {
+          if (item.settingKey === "admin") return user?.role === "admin";
+          if (item.settingKey === "settings")
             return user?.role === "admin" || user?.role === "supervisor";
-          }
-          if (item.settingKey === "developer") {
-            return user?.role === "admin";
-          }
+          if (item.settingKey === "developer") return user?.role === "admin";
           return isPageEnabled(item.settingKey);
         }),
       };
     })
-    .filter((section) => section.items.length > 0);
+    .filter((s) => s.items.length > 0);
 
-  const handleLinkClick = () => {
-    if (onClose) {
-      onClose();
-    }
-  };
+  // ── Shared nav render ────────────────────────────────────────────────────────
 
-  const handleLogout = async () => {
-    await authManager.logout();
-  };
+  const renderNav = (isMobile = false) => (
+    <nav className="flex-1 overflow-y-auto pb-4 scrollbar-thin scrollbar-thumb-gray-100">
+      {filteredSections.map((section) => {
+        const isSectionCollapsed = !!collapsedSections[section.title];
+        return (
+          <div key={section.title}>
+            <SectionHeader
+              title={section.title}
+              collapsed={isSectionCollapsed}
+              onToggle={() => toggleSection(section.title)}
+              sidebarCollapsed={!isMobile && isCollapsed}
+            />
+
+            <AnimatePresence initial={false}>
+              {!isSectionCollapsed && (
+                <motion.div
+                  initial={false}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-0.5 mt-0.5">
+                    {section.items.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        item={item}
+                        isActive={location === item.href}
+                        onClick={isMobile ? onClose : undefined}
+                        collapsed={!isMobile && isCollapsed}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </nav>
+  );
+
+  // ── Logout ───────────────────────────────────────────────────────────────────
+
+  const LogoutButton = ({ collapsed: c }: { collapsed: boolean }) => (
+    <div
+      className={cn(
+        "flex-shrink-0 border-t border-gray-100 p-3",
+        c ? "flex justify-center" : "",
+      )}
+    >
+      {c ? (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => authManager.logout()}
+                className="p-2.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                data-testid="button-logout-collapsed"
+              >
+                <LogOut className="h-4.5 w-4.5" strokeWidth={1.75} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-gray-900 text-white border-gray-700 text-xs">
+              Logout
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <button
+          onClick={() => authManager.logout()}
+          className="group flex items-center gap-3 w-full mx-0 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+          data-testid="button-logout"
+        >
+          <div className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg bg-transparent group-hover:bg-red-100 transition-colors">
+            <LogOut className="h-[16px] w-[16px]" strokeWidth={1.75} />
+          </div>
+          <span className="text-sm font-medium">Logout</span>
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <>
-      {/* Mobile sidebar */}
+      {/* ── Mobile overlay backdrop ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[9998] bg-gray-900/40 backdrop-blur-[2px] md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile Sidebar ───────────────────────────────────────────────────── */}
       <div
-        className={`fixed inset-y-0 left-0 z-[9999] w-72 md:hidden transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={cn(
+          "fixed inset-y-0 left-0 z-[9999] w-72 md:hidden transform transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )}
       >
-        <div className="flex flex-col flex-grow h-full shadow-xl border-r border-gray-200 bg-white">
-          {/* Mobile header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+        <div className="flex flex-col h-full bg-white border-r border-gray-100 shadow-xl">
+          {/* Mobile top bar */}
+          <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 flex-shrink-0">
             <Link href="/welcome">
-              <span
-                className="flex items-center cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={handleLinkClick}
-              >
-                <div className="w-11 h-11 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
-                  <img src={logoImage} alt={t("sidebar.logoAlt")} className="w-full h-full object-cover" data-testid="img-logo-sidebar-mobile" />
+              <span className="flex items-center gap-3 cursor-pointer" onClick={onClose}>
+                <div className="w-8 h-8 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+                  <img src={logoImage} alt="Gold Home" className="w-full h-full object-cover" />
                 </div>
-                <div className="ml-3">
-                  <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+                <div>
+                  <p className="text-sm font-bold text-gray-900 leading-tight">
                     {t("sidebar.companyName")}
-                  </h1>
-                  <p className="text-xs text-gray-500 font-medium">
+                  </p>
+                  <p className="text-[10px] text-gray-500 font-medium">
                     {t("sidebar.companySubtitle")}
                   </p>
                 </div>
               </span>
             </Link>
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onClose}
-              className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-all"
-              data-testid="button-close-mobile-sidebar"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
             >
-              <X className="h-5 w-5" />
-            </Button>
+              <X className="h-5 w-5" strokeWidth={1.75} />
+            </button>
           </div>
 
-          <div className="mt-2 flex-grow flex flex-col overflow-y-auto">
-            <nav className="flex-1 px-3 space-y-1.5 pb-4">
-              {filteredNavigationSections.map((section, index) => {
-                const isSectionCollapsed = collapsedSections[section.title];
+          {/* Mobile profile card */}
+          <ProfileCard user={user} collapsed={false} />
+
+          {/* Mobile nav */}
+          {renderNav(true)}
+
+          {/* Mobile logout */}
+          <LogoutButton collapsed={false} />
+        </div>
+      </div>
+
+      {/* ── Desktop Sidebar ──────────────────────────────────────────────────── */}
+      <motion.div
+        className="hidden md:flex md:flex-col flex-shrink-0"
+        animate={{ width: isCollapsed ? 72 : 260 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <div className="flex flex-col h-screen bg-white border-r border-gray-100 overflow-hidden">
+
+          {/* Desktop Logo + Toggle */}
+          <div
+            className={cn(
+              "flex items-center flex-shrink-0 h-16 border-b border-gray-100 px-4",
+              isCollapsed ? "justify-center" : "justify-between",
+            )}
+          >
+            <AnimatePresence mode="wait">
+              {!isCollapsed ? (
+                <motion.div
+                  key="logo-expanded"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2.5 overflow-hidden"
+                >
+                  <Link href="/welcome">
+                    <span className="flex items-center gap-2.5 cursor-pointer">
+                      <div className="w-8 h-8 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white flex-shrink-0">
+                        <img
+                          src={logoImage}
+                          alt="Gold Home"
+                          className="w-full h-full object-cover"
+                          data-testid="img-logo-sidebar"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-gray-900 leading-tight truncate">
+                          {t("sidebar.companyName")}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-medium truncate">
+                          {t("sidebar.companySubtitle")}
+                        </p>
+                      </div>
+                    </span>
+                  </Link>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="logo-collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <Link href="/welcome">
+                    <div className="w-8 h-8 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white cursor-pointer">
+                      <img src={logoImage} alt="Gold Home" className="w-full h-full object-cover" />
+                    </div>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Collapse toggle */}
+            {!isCollapsed && (
+              <button
+                onClick={toggleSidebar}
+                className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                data-testid="button-toggle-sidebar"
+              >
+                <PanelLeftClose className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            )}
+          </div>
+
+          {/* Expand button when collapsed */}
+          {isCollapsed && (
+            <div className="flex justify-center pt-2 px-2">
+              <button
+                onClick={toggleSidebar}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                data-testid="button-expand-sidebar"
+              >
+                <PanelLeftOpen className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            </div>
+          )}
+
+          {/* Desktop profile card */}
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ProfileCard user={user} collapsed={false} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {isCollapsed && <ProfileCard user={user} collapsed={true} />}
+
+          {/* Desktop nav */}
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-100">
+            <nav className="pb-4">
+              {filteredSections.map((section) => {
+                const isSectionCollapsed = !!collapsedSections[section.title];
                 return (
                   <div key={section.title}>
-                    {index > 0 && <div className="h-px my-2" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />}
-                    <button
-                      onClick={() => toggleSection(section.title)}
-                      className="w-full flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider px-3 py-2.5 transition-all rounded-lg hover:bg-gray-50"
-                      data-testid={`button-toggle-section-${section.title.replace(/\s+/g, "-").toLowerCase()}-mobile`}
-                    >
-                      <span>{section.title}</span>
-                      <motion.div
-                        animate={{ rotate: isSectionCollapsed ? 0 : 90 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </motion.div>
-                    </button>
+                    <SectionHeader
+                      title={section.title}
+                      collapsed={isSectionCollapsed}
+                      onToggle={() => toggleSection(section.title)}
+                      sidebarCollapsed={isCollapsed}
+                    />
                     <AnimatePresence initial={false}>
                       {!isSectionCollapsed && (
                         <motion.div
                           initial={false}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
                           className="overflow-hidden"
                         >
-                          <div className="space-y-1 mt-1">
-                            {section.items.map((item) => {
-                              const isActive = location === item.href;
-                              const Icon = item.icon;
-
-                              return (
-                                <Link key={item.name} href={item.href}>
-                                  <motion.span
-                                    whileHover={{ x: 2 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={handleLinkClick}
-                                    className={cn(
-                                      "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200",
-                                      isActive
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                                    )}
-                                    data-testid={`link-${item.name.replace(/\s+/g, "-").toLowerCase()}-mobile`}
-                                  >
-                                    {Icon && (
-                                      <Icon
-                                        className={cn(
-                                          "mr-3 h-5 w-5 transition-all duration-200",
-                                          isActive
-                                            ? "text-primary"
-                                            : "text-gray-400 group-hover:text-gray-600",
-                                        )}
-                                      />
-                                    )}
-                                    <span className="font-medium">{item.name}</span>
-                                  </motion.span>
-                                </Link>
-                              );
-                            })}
+                          <div className="space-y-0.5 mt-0.5">
+                            {section.items.map((item) => (
+                              <NavLink
+                                key={item.href}
+                                item={item}
+                                isActive={location === item.href}
+                                collapsed={isCollapsed}
+                              />
+                            ))}
                           </div>
                         </motion.div>
                       )}
@@ -396,321 +740,10 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             </nav>
           </div>
 
-          {user && (
-            <div className="flex-shrink-0 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-              <div className="p-4">
-                <div className="flex items-center gap-3 p-3 rounded-lg border transition-all" style={{ backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)"}>
-                  <div className="relative">
-                    <img
-                      className="h-10 w-10 rounded-lg object-cover border border-gray-200"
-                      src={
-                        user.avatar ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6B7280&color=fff`
-                      }
-                      alt={user.name}
-                    />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-purple-500 rounded-full border-2 border-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">
-                      {user.name}
-                    </p>
-                    <p className="text-xs font-medium text-gray-300 capitalize">
-                      {user.role}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="p-2 text-gray-300 hover:text-white rounded-lg transition-all"
-                    data-testid="button-logout-mobile"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Desktop logout */}
+          <LogoutButton collapsed={isCollapsed} />
         </div>
-      </div>
-
-      {/* Desktop sidebar */}
-      <div
-        className={cn(
-          "hidden md:flex md:flex-col transition-all duration-300 ease-in-out",
-          isCollapsed ? "md:w-20" : "md:w-72",
-        )}
-      >
-        <div className="flex flex-col flex-grow h-screen shadow-sm border-r border-gray-200 bg-white">
-          {/* Desktop header */}
-          <div
-            className={cn(
-              "flex items-center flex-shrink-0 px-5 py-5 transition-all duration-300",
-              isCollapsed ? "justify-center" : "justify-between",
-            )}
-          >
-            <Link href="/welcome">
-              <span className="flex items-center cursor-pointer hover:opacity-90 transition-opacity">
-                <div className="w-11 h-11 rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
-                  <img src={logoImage} alt={t("sidebar.logoAlt")} className="w-full h-full object-cover" data-testid="img-logo-sidebar" />
-                </div>
-                <AnimatePresence>
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="ml-3 overflow-hidden"
-                    >
-                      <h1 className="text-lg font-bold text-gray-900 whitespace-nowrap tracking-tight">
-                        {t("sidebar.companyName")}
-                      </h1>
-                      <p className="text-xs text-gray-500 whitespace-nowrap font-medium">
-                        {t("sidebar.companySubtitle")}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </span>
-            </Link>
-
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleSidebar}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                    data-testid="button-toggle-sidebar"
-                  >
-                    <PanelLeftClose className="h-4 w-4" />
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {isCollapsed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute top-5 right-2 z-20"
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                className="p-2 text-gray-300 hover:text-white rounded-lg transition-all"
-                data-testid="button-expand-sidebar"
-              >
-                <PanelLeftOpen className="h-4 w-4" />
-              </Button>
-            </motion.div>
-          )}
-
-          <div className="mt-2 flex-grow flex flex-col overflow-y-auto">
-            <nav className="flex-1 px-3 space-y-1.5 pb-4">
-              {filteredNavigationSections.map((section, index) => {
-                const isSectionCollapsed = collapsedSections[section.title];
-                return (
-                  <div key={section.title}>
-                    {index > 0 && !isCollapsed && (
-                      <div className="h-px my-2" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
-                    )}
-                    {!isCollapsed ? (
-                      <>
-                        <button
-                          onClick={() => toggleSection(section.title)}
-                          className="w-full flex items-center justify-between text-xs font-bold text-gray-500 uppercase tracking-wider px-3 py-2.5 transition-all rounded-lg hover:bg-gray-50 mb-1"
-                        >
-                          <span>{section.title}</span>
-                          <motion.div
-                            animate={{ rotate: isSectionCollapsed ? 0 : 90 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                          >
-                            <ChevronRight className="h-3.5 w-3.5" />
-                          </motion.div>
-                        </button>
-                        <AnimatePresence initial={false}>
-                          {!isSectionCollapsed && (
-                            <motion.div
-                              initial={false}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="space-y-1 mt-1">
-                                {section.items.map((item) => {
-                                  const isActive = location === item.href;
-                                  const Icon = item.icon;
-
-                                  return (
-                                    <Link key={item.name} href={item.href}>
-                                      <motion.span
-                                        whileHover={{ x: 2 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className={cn(
-                                          "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200",
-                                          isActive
-                                            ? "bg-emerald-50 text-emerald-600"
-                                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                                        )}
-                                        data-testid={`link-${item.name.replace(/\s+/g, "-").toLowerCase()}-desktop`}
-                                      >
-                                        {Icon && (
-                                          <Icon
-                                            className={cn(
-                                              "mr-3 h-5 w-5 transition-all duration-200",
-                                              isActive
-                                                ? "text-emerald-600"
-                                                : "text-gray-400 group-hover:text-gray-600",
-                                            )}
-                                          />
-                                        )}
-                                        <span className="font-medium">{item.name}</span>
-                                      </motion.span>
-                                    </Link>
-                                  );
-                                })}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </>
-                    ) : (
-                      <TooltipProvider delayDuration={0}>
-                        <div className="space-y-1">
-                          {section.items.map((item) => {
-                            const isActive = location === item.href;
-                            const Icon = item.icon;
-
-                            return (
-                              <Tooltip key={item.name}>
-                                <TooltipTrigger asChild>
-                                  <Link href={item.href}>
-                                    <motion.span
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      className={cn(
-                                        "group flex items-center justify-center p-3 rounded-lg cursor-pointer transition-all duration-200",
-                                        isActive
-                                          ? "text-white"
-                                          : "text-gray-300 hover:text-white",
-                                      )}
-                                      style={isActive ? { backgroundColor: "rgba(255,255,255,0.15)" } : {}}
-                                      onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")}
-                                      onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = "")}
-                                      data-testid={`link-${item.name.replace(/\s+/g, "-").toLowerCase()}-collapsed`}
-                                    >
-                                      {Icon && (
-                                        <Icon
-                                          className={cn(
-                                            "h-5 w-5 transition-all duration-200",
-                                            isActive
-                                              ? "text-white"
-                                              : "text-gray-400 group-hover:text-gray-200",
-                                          )}
-                                        />
-                                      )}
-                                    </motion.span>
-                                  </Link>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="right"
-                                  className="bg-gray-900 text-white border-gray-700"
-                                >
-                                  <p>{item.name}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            );
-                          })}
-                        </div>
-                      </TooltipProvider>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
-          </div >
-
-          {user && (
-            <div className="flex-shrink-0 border-t border-gray-100 p-4">
-              {!isCollapsed && (
-                <></>
-              )}
-
-              <div>
-                {isCollapsed ? (
-                  <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex justify-center">
-                          <img
-                            className="h-10 w-10 rounded-lg object-cover border border-gray-200"
-                            src={
-                              user.avatar ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6B7280&color=fff`
-                            }
-                            alt={user.name}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="right"
-                        className="bg-gray-900 text-white border-gray-700"
-                      >
-                        <p className="font-semibold">{user.name}</p>
-                        <p className="text-xs text-gray-300 capitalize">{user.role}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all bg-white">
-                    <div className="relative">
-                      <img
-                        className="h-10 w-10 rounded-full object-cover border border-gray-100"
-                        src={
-                          user.avatar ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=047857&color=fff`
-                        }
-                        alt={user.name}
-                      />
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">
-                        {user.name}
-                      </p>
-                      <p className="text-xs font-medium text-gray-500 capitalize">
-                        {user.username || user.role}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleLogout}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      data-testid="button-logout-desktop"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-          }
-        </div>
-      </div>
+      </motion.div>
     </>
   );
 }
