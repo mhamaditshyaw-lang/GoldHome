@@ -907,7 +907,26 @@
       "invoiceSuccess": "سەرکەوتوو",
       "invoiceSuccessMessage": "پسوڵە بە سەرکەوتوویی دروست کرا",
       "invoiceError": "هەڵە",
-      "createButton": "پسوڵە دروست بکە"
+      "createButton": "پسوڵە دروست بکە",
+      "validation": {
+        "requiredFieldsTitle": "⚠️ تکایە خانەکانی پێویستی پڕ بکەرەوە",
+        "missing": "کەم: ",
+        "customerName": "ناوی کڕیار",
+        "employeeName": "ناوی کارمەند",
+        "address": "ناونیشان",
+        "date": "بەروار",
+        "startingTime": "کاتی دەستپێکردن",
+        "finishingTime": "کاتی کۆتایی",
+        "dailySalary": "مووچەی ڕۆژانە",
+        "services": "خزمەتگوزارییەکان (کەم کەم یەکێک هەڵبژێرە)",
+        "groupName": "ناوی گرووپ",
+        "startDate": "بەرواری دەستپێکردن",
+        "endDate": "بەرواری کۆتایی",
+        "employees": "کارمەندەکان (کەم کەم یەک ناو پێویستە)",
+        "startingHr": "کاتی دەستپێکردن",
+        "endHr": "کاتی کۆتایی",
+        "numberOfCustomers": "ژمارەی کڕیاران"
+      }
     },
     "groupInvoice": {
       "title": "پسوڵەی گرووپ",

@@ -119,6 +119,7 @@ interface MetricCardProps {
   iconBg: string;
   iconColor: string;
   isLoading: boolean;
+  cardBg?: string;
 }
 
 function MetricCard({
@@ -129,32 +130,34 @@ function MetricCard({
   iconBg,
   iconColor,
   isLoading,
+  cardBg,
 }: MetricCardProps) {
+  const hasGradient = !!cardBg;
   return (
-    <div className="bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100/80 p-5 transition-all duration-200 group">
+    <div className={`rounded-2xl shadow-sm hover:shadow-lg border p-5 transition-all duration-300 group ${cardBg || 'bg-white border-gray-100/80'}`}>
       <div className="flex items-start justify-between gap-3">
         {/* Text section */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">
+          <p className={`text-xs sm:text-sm font-medium truncate ${hasGradient ? 'text-white/80' : 'text-gray-500'}`}>
             {title}
           </p>
           {isLoading ? (
-            <div className="h-7 w-28 bg-gray-100 rounded-lg animate-pulse mt-2 mb-1.5" />
+            <div className={`h-7 w-28 rounded-lg animate-pulse mt-2 mb-1.5 ${hasGradient ? 'bg-white/20' : 'bg-gray-100'}`} />
           ) : (
-            <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1.5 tracking-tight">
+            <p className={`text-xl sm:text-2xl font-bold mt-1.5 tracking-tight ${hasGradient ? 'text-white' : 'text-gray-900'}`}>
               {value}
             </p>
           )}
-          <p className="text-[11px] sm:text-xs text-gray-400 mt-1 leading-tight">
+          <p className={`text-[11px] sm:text-xs mt-1 leading-tight ${hasGradient ? 'text-white/60' : 'text-gray-400'}`}>
             {subtitle}
           </p>
         </div>
 
         {/* Icon */}
         <div
-          className={`${iconBg} p-2.5 sm:p-3 rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-200`}
+          className={`p-2.5 sm:p-3 rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-200 ${hasGradient ? 'bg-white/20 backdrop-blur-sm' : iconBg}`}
         >
-          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColor}`} />
+          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${hasGradient ? 'text-white' : iconColor}`} />
         </div>
       </div>
     </div>
@@ -512,6 +515,7 @@ export default function Dashboard() {
                 iconBg="bg-emerald-50"
                 iconColor="text-emerald-600"
                 isLoading={statsLoading}
+                cardBg="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 border-emerald-400/30 shadow-emerald-500/20"
               />
               <MetricCard
                 title={t("dashboard.remainingAmount")}
@@ -521,6 +525,7 @@ export default function Dashboard() {
                 iconBg="bg-blue-50"
                 iconColor="text-blue-600"
                 isLoading={statsLoading}
+                cardBg="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 border-blue-400/30 shadow-blue-500/20"
               />
               <MetricCard
                 title={t("dashboard.employeeSalary")}
@@ -530,6 +535,7 @@ export default function Dashboard() {
                 iconBg="bg-violet-50"
                 iconColor="text-violet-600"
                 isLoading={statsLoading}
+                cardBg="bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-600 border-violet-400/30 shadow-violet-500/20"
               />
               <MetricCard
                 title={t("dashboard.totalExpenses")}
@@ -539,6 +545,7 @@ export default function Dashboard() {
                 iconBg="bg-rose-50"
                 iconColor="text-rose-600"
                 isLoading={statsLoading}
+                cardBg="bg-gradient-to-br from-rose-500 via-pink-600 to-red-600 border-rose-400/30 shadow-rose-500/20"
               />
             </div>
 
@@ -621,39 +628,43 @@ export default function Dashboard() {
                   label: "Jobs Completed",
                   value: stats?.jobsCompleted ?? 0,
                   icon: CheckCircle,
-                  color: "text-emerald-600",
-                  bg: "bg-emerald-50",
+                  color: "text-white",
+                  bg: "bg-white/20 backdrop-blur-sm",
+                  cardBg: "bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 border-emerald-300/30",
                   isLoading: statsLoading,
                 },
                 {
                   label: "Active Cleaners",
                   value: stats?.activeCleaners ?? 0,
                   icon: Users,
-                  color: "text-blue-600",
-                  bg: "bg-blue-50",
+                  color: "text-white",
+                  bg: "bg-white/20 backdrop-blur-sm",
+                  cardBg: "bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 border-blue-300/30",
                   isLoading: statsLoading,
                 },
                 {
                   label: "Working Now",
                   value: stats?.workingNow ?? 0,
                   icon: Activity,
-                  color: "text-violet-600",
-                  bg: "bg-violet-50",
+                  color: "text-white",
+                  bg: "bg-white/20 backdrop-blur-sm",
+                  cardBg: "bg-gradient-to-br from-violet-400 via-purple-500 to-fuchsia-500 border-violet-300/30",
                   isLoading: statsLoading,
                 },
                 {
                   label: "Total Debt",
                   value: formatCurrency(stats?.totalDebt || 0),
                   icon: Receipt,
-                  color: "text-rose-600",
-                  bg: "bg-rose-50",
+                  color: "text-white",
+                  bg: "bg-white/20 backdrop-blur-sm",
+                  cardBg: "bg-gradient-to-br from-rose-400 via-pink-500 to-red-500 border-rose-300/30",
                   isLoading: statsLoading,
                   isString: true,
                 },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:shadow-md transition-shadow duration-200"
+                  className={`rounded-2xl border shadow-sm p-4 flex items-center gap-3 hover:shadow-lg transition-all duration-300 ${item.cardBg}`}
                 >
                   <div
                     className={`${item.bg} p-2.5 rounded-xl shrink-0`}
@@ -661,13 +672,13 @@ export default function Dashboard() {
                     <item.icon className={`h-4 w-4 ${item.color}`} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] text-gray-500 font-medium truncate">
+                    <p className="text-[11px] text-white/70 font-medium truncate">
                       {item.label}
                     </p>
                     {item.isLoading ? (
-                      <div className="h-5 w-12 bg-gray-100 rounded animate-pulse mt-0.5" />
+                      <div className="h-5 w-12 bg-white/20 rounded animate-pulse mt-0.5" />
                     ) : (
-                      <p className="text-base font-bold text-gray-900">
+                      <p className="text-base font-bold text-white">
                         {(item as any).isString ? item.value : item.value}
                       </p>
                     )}

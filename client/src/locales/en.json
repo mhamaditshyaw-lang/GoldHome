@@ -948,7 +948,26 @@
       "profitFormula": "(Received - Food - Taxi - Materials - (Daily Salary × {count} Employees))",
       "invoiceSuccess": "Success",
       "invoiceSuccessMessage": "Invoice created successfully",
-      "invoiceError": "Error"
+      "invoiceError": "Error",
+      "validation": {
+        "requiredFieldsTitle": "⚠️ Please fill in required fields",
+        "missing": "Missing: ",
+        "customerName": "Customer Name",
+        "employeeName": "Employee Name",
+        "address": "Address",
+        "date": "Date",
+        "startingTime": "Starting Time",
+        "finishingTime": "Finishing Time",
+        "dailySalary": "Daily Salary",
+        "services": "Services (select at least one)",
+        "groupName": "Group Name",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "employees": "Employees (at least one name required)",
+        "startingHr": "Starting Hour",
+        "endHr": "End Hour",
+        "numberOfCustomers": "Number of Customers"
+      }
     },
     "searchPlaceholder": "Search by customer, service, or cleaner...",
     "filterByStatus": "Filter by status",
