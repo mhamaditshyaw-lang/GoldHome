@@ -30,6 +30,7 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Service } from "@shared/schema";
+import { cn } from "@/lib/utils";
 
 // Schema for Daily Employee
 const dailyEmployeeSchema = z.object({
@@ -109,6 +110,8 @@ interface InvoiceFormProps {
 export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
   const [invoiceType, setInvoiceType] = useState<"daily" | "group" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittedAttemptedGroup, setIsSubmittedAttemptedGroup] = useState(false);
+  const [isSubmittedAttemptedDaily, setIsSubmittedAttemptedDaily] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const user = authManager.getState().user;
@@ -153,6 +156,7 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
   // Group Employee Form
   const groupForm = useForm<GroupEmployeeData>({
     resolver: zodResolver(groupEmployeeSchema),
+    mode: "onChange",
     defaultValues: {
       type: "group",
       groupName: "",
@@ -365,6 +369,19 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
   });
 
   const onSubmitDaily = (data: DailyEmployeeData) => {
+    setIsSubmittedAttemptedDaily(true);
+    const errors = dailyForm.formState.errors;
+    
+    // Logic Guard
+    if (Object.keys(errors).length > 0 || !data.customerName || !data.employeeName || !data.address || !data.numberOfCustomers || !data.dailySalary || !data.startingTime || !data.finishingTime) {
+      toast({
+        title: "هەڵە هەیە!",
+        description: "تکایە هەموو خانە سوورەکان پڕ بکەرەوە!",
+        variant: "destructive",
+      });
+      return; // STOP the process here. Do not call the backend.
+    }
+
     // Ensure remaining amount is calculated before submission
     const servicesList = data.services || [];
     const totalAmount = servicesList.reduce((sum, s) => sum + (parseFloat(s.price || "0") * (s.quantity || 1)), 0);
@@ -386,6 +403,19 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
   };
 
   const onSubmitGroup = (data: GroupEmployeeData) => {
+    setIsSubmittedAttemptedGroup(true);
+    const errors = groupForm.formState.errors;
+    
+    // Logic Guard
+    if (Object.keys(errors).length > 0 || !data.groupName || !data.address || data.employees.some(e => !e.salary) || !data.startingHr || !data.endHr || !data.workDuration) {
+      toast({
+        title: "هەڵە هەیە!",
+        description: "تکایە هەموو خانە سوورەکان پڕ بکەرەوە!",
+        variant: "destructive",
+      });
+      return; // STOP the process here. Do not call the backend.
+    }
+
     createInvoiceMutation.mutate(data);
   };
 
@@ -422,7 +452,17 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
           ) : invoiceType === "daily" ? (
             // Daily Employee Form
             <Form {...dailyForm} key={`daily-${language}`}>
-              <form onSubmit={dailyForm.handleSubmit(onSubmitDaily)} className="space-y-6">
+              <form 
+                onSubmit={dailyForm.handleSubmit(onSubmitDaily, () => {
+                  setIsSubmittedAttemptedDaily(true);
+                  toast({
+                    title: "هەڵە هەیە!",
+                    description: "تکایە هەموو خانە سوورەکان پڕ بکەرەوە!",
+                    variant: "destructive",
+                  });
+                })} 
+                className="space-y-6"
+              >
                 {/* Employee Information */}
                 <Card>
                   <CardHeader className="pb-3">
@@ -436,7 +476,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                         <FormItem>
                           <FormLabel>{t("invoices.newInvoice.customerName")} *</FormLabel>
                           <FormControl>
-                            <Input placeholder={t("invoices.newInvoice.customerNamePlaceholder")} {...field} data-testid="input-customer-name" />
+                            <Input 
+                              placeholder={t("invoices.newInvoice.customerNamePlaceholder")} 
+                              {...field} 
+                              data-testid="input-customer-name" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -450,7 +498,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                         <FormItem>
                           <FormLabel>{t("invoices.newInvoice.employeeName")} *</FormLabel>
                           <FormControl>
-                            <Input placeholder={t("invoices.newInvoice.employeeNamePlaceholder")} {...field} data-testid="input-employee-name" />
+                            <Input 
+                              placeholder={t("invoices.newInvoice.employeeNamePlaceholder")} 
+                              {...field} 
+                              data-testid="input-employee-name" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -465,7 +521,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                           <FormItem>
                             <FormLabel>{t("invoices.newInvoice.address")} *</FormLabel>
                             <FormControl>
-                              <Input placeholder={t("invoices.newInvoice.addressPlaceholder")} {...field} data-testid="input-address" />
+                              <Input 
+                              placeholder={t("invoices.newInvoice.addressPlaceholder")} 
+                              {...field} 
+                              data-testid="input-address" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -493,7 +557,16 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                         <FormItem>
                           <FormLabel>{t("invoices.newInvoice.numberOfCustomers")} *</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder={t("invoices.newInvoice.numberOfCustomersPlaceholder")} {...field} data-testid="input-customers" />
+                            <Input 
+                              type="number" 
+                              placeholder={t("invoices.newInvoice.numberOfCustomersPlaceholder")} 
+                              {...field} 
+                              data-testid="input-customers" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -538,6 +611,10 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                               }}
                               value={field.value || ""}
                               data-testid="input-date"
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
                             />
                           </FormControl>
                           <FormMessage />
@@ -562,6 +639,10 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                                 }}
                                 value={field.value || ""}
                                 data-testid="input-start-time"
+                                className={cn(
+                                  "transition-all duration-200",
+                                  isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -584,6 +665,10 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                                 }}
                                 value={field.value || ""}
                                 data-testid="input-finish-time"
+                                className={cn(
+                                  "transition-all duration-200",
+                                  isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -850,6 +935,10 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                                   setTimeout(() => calculateRemaining(), 0);
                                 }}
                                 data-testid="input-salary"
+                                className={cn(
+                                  "transition-all duration-200",
+                                  isSubmittedAttemptedDaily && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -912,6 +1001,7 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                   <Button
                     type="submit"
                     className="bg-purple-600 hover:bg-purple-700"
+                    onClick={() => setIsSubmittedAttemptedDaily(true)}
                     disabled={createInvoiceMutation.isPending}
                     data-testid="button-create-invoice"
                   >
@@ -927,7 +1017,17 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
           ) : (
             // Group Employee Form
             <Form {...groupForm} key={`group-${language}`}>
-              <form onSubmit={groupForm.handleSubmit(onSubmitGroup)} className="space-y-6">
+              <form 
+                onSubmit={groupForm.handleSubmit(onSubmitGroup, () => {
+                  setIsSubmittedAttemptedGroup(true);
+                  toast({
+                    title: "هەڵە هەیە!",
+                    description: "تکایە هەموو خانە سوورەکان پڕ بکەرەوە!",
+                    variant: "destructive",
+                  });
+                })} 
+                className="space-y-6"
+              >
                 {/* Basic Group Info */}
                 <Card>
                   <CardHeader className="pb-3">
@@ -941,7 +1041,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                         <FormItem>
                           <FormLabel>{t("invoices.newInvoice.groupName")} *</FormLabel>
                           <FormControl>
-                            <Input placeholder={t("invoices.newInvoice.groupNamePlaceholder")} {...field} data-testid="input-group-name" />
+                            <Input 
+                              placeholder={t("invoices.newInvoice.groupNamePlaceholder")} 
+                              {...field} 
+                              data-testid="input-group-name" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -955,7 +1063,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                         <FormItem>
                           <FormLabel>{t("invoices.newInvoice.address")} *</FormLabel>
                           <FormControl>
-                            <Input placeholder={t("invoices.newInvoice.addressPlaceholder")} {...field} data-testid="input-group-address" />
+                            <Input 
+                              placeholder={t("invoices.newInvoice.addressPlaceholder")} 
+                              {...field} 
+                              data-testid="input-group-address" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1074,7 +1190,15 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                               <FormItem>
                                 <FormLabel className="text-sm">{t("invoices.newInvoice.employeeName")} {index + 1}</FormLabel>
                                 <FormControl>
-                                  <Input placeholder={`${t("invoices.newInvoice.employeeName")} ${index + 1}`} {...field} data-testid={`input-employee-name-${index}`} />
+                                  <Input 
+                                    placeholder={`${t("invoices.newInvoice.employeeName")} ${index + 1}`} 
+                                    {...field} 
+                                    data-testid={`input-employee-name-${index}`} 
+                                    className={cn(
+                                      "transition-all duration-200",
+                                      isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                    )}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1087,7 +1211,17 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                               <FormItem>
                                 <FormLabel className="text-sm">{t("invoices.newInvoice.dailySalary")}</FormLabel>
                                 <FormControl>
-                                  <Input type="number" step="0.01" placeholder="0" {...field} data-testid={`input-employee-salary-${index}`} />
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0" 
+                                    {...field} 
+                                    data-testid={`input-employee-salary-${index}`} 
+                                    className={cn(
+                                      "transition-all duration-200",
+                                      isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                    )}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1143,8 +1277,16 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                           <FormItem>
                             <FormLabel>{t("invoices.newInvoice.startingHr")} *</FormLabel>
                             <FormControl>
-                              <Input type="time" {...field} data-testid="input-group-start-hr" />
-                            </FormControl>
+                            <Input 
+                              type="time" 
+                              {...field} 
+                              data-testid="input-group-start-hr" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
+                          </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1156,8 +1298,16 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                           <FormItem>
                             <FormLabel>{t("invoices.newInvoice.endHr")} *</FormLabel>
                             <FormControl>
-                              <Input type="time" {...field} data-testid="input-group-end-hr" />
-                            </FormControl>
+                            <Input 
+                              type="time" 
+                              {...field} 
+                              data-testid="input-group-end-hr" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
+                          </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1172,8 +1322,18 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                           <FormItem>
                             <FormLabel>{t("invoices.newInvoice.workDuration")} *</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.5" placeholder="0" {...field} data-testid="input-group-duration" />
-                            </FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.5" 
+                              placeholder="0" 
+                              {...field} 
+                              data-testid="input-group-duration" 
+                              className={cn(
+                                "transition-all duration-200",
+                                isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                              )}
+                            />
+                          </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1354,6 +1514,10 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                                 {...field}
                                 onChange={(e) => { field.onChange(e); setTimeout(calculateGroupNet, 0); }}
                                 data-testid="input-group-employee-pay"
+                                className={cn(
+                                  "transition-all duration-200",
+                                  isSubmittedAttemptedGroup && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1519,6 +1683,7 @@ export default function NewInvoiceForm({ onClose }: InvoiceFormProps) {
                   <Button
                     type="submit"
                     className="bg-purple-600 hover:bg-purple-700"
+                    onClick={() => setIsSubmittedAttemptedGroup(true)}
                     disabled={createInvoiceMutation.isPending}
                   >
                     {createInvoiceMutation.isPending ? <ButtonLoader>Creating...</ButtonLoader> : "Create Group Invoice"}

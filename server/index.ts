@@ -22,6 +22,12 @@ async function initializeDatabase() {
     return;
   }
 
+  // Timeout database check to prevent hanging the whole server startup
+  const dbCheckTimeout = setTimeout(() => {
+    log("⏰ Database check taking too long. Moving on...");
+    retryCount = maxRetries;
+  }, 10000);
+
   while (retryCount < maxRetries) {
     try {
       log(`Checking database connection and initializing... (attempt ${retryCount + 1}/${maxRetries})`);
@@ -63,6 +69,7 @@ async function initializeDatabase() {
       }
     }
   }
+  clearTimeout(dbCheckTimeout);
 }
 
 app.use((req, res, next) => {
@@ -139,7 +146,7 @@ app.use((req, res, next) => {
   // Only enable it on non-Windows platforms (e.g., Linux) where it's supported.
   const listenOptions: any = {
     port,
-    host: "0.0.0.0",
+    host: "127.0.0.1",
   };
 
   if (process.platform !== 'win32') {

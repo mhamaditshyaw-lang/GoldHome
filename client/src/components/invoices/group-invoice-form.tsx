@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { authManager } from "@/lib/auth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Receipt, Plus, Trash2 } from "lucide-react";
 import { User } from "@shared/schema";
+import { cn } from "@/lib/utils";
 
 interface GroupInvoiceFormProps {
   onClose: () => void;
@@ -20,6 +22,7 @@ interface GroupInvoiceFormProps {
 
 const groupInvoiceFormSchema = z.object({
   customerName: z.string().min(1, "Customer name is required"),
+  serviceType: z.string().min(1, "Service type is required"),
   employees: z.array(z.object({
     name: z.string().min(1, "Employee name is required"),
     employeeId: z.string().optional(),
@@ -37,16 +40,31 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const user = authManager.getState().user;
+  const [isSubmittedAttempted, setIsSubmittedAttempted] = useState(false);
 
   // Fetch team members to get their salaries
   const { data: teamMembers = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
+  const serviceTypes = [
+    { key: "regularHouseClean", label: t("invoices.serviceTypes.regularHouseClean") },
+    { key: "deepClean", label: t("invoices.serviceTypes.deepClean") },
+    { key: "kitchenDeepClean", label: t("invoices.serviceTypes.kitchenDeepClean") },
+    { key: "bathroomDeepClean", label: t("invoices.serviceTypes.bathroomDeepClean") },
+    { key: "officeClean", label: t("invoices.serviceTypes.officeClean") },
+    { key: "moveInMoveOut", label: t("invoices.serviceTypes.moveInMoveOut") },
+    { key: "postConstructionClean", label: t("invoices.serviceTypes.postConstructionClean") },
+    { key: "cleaningAndTransfer", label: t("invoices.serviceTypes.cleaningAndTransfer") },
+    { key: "mirHouseCleaning", label: t("invoices.serviceTypes.mirHouseCleaning") },
+  ];
+
   const form = useForm<GroupInvoiceFormData>({
     resolver: zodResolver(groupInvoiceFormSchema),
+    mode: "onChange",
     defaultValues: {
       customerName: "",
+      serviceType: "",
       employees: [{ name: "", employeeId: "", salary: "" }],
       totalAmount: "",
       date: new Date().toISOString().split('T')[0],
@@ -54,7 +72,10 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
     },
   });
 
-  const employees = form.watch("employees") || [{ name: "", employeeId: "", salary: "" }];
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "employees",
+  });
 
   const createGroupInvoiceMutation = useMutation({
     mutationFn: async (data: GroupInvoiceFormData) => {
@@ -81,7 +102,7 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
         services: [
           {
             id: 1,
-            name: "Group Service",
+            name: data.serviceType || "Group Service",
             price: avgSalary,
             quantity: filteredEmployees.length,
           }
@@ -92,6 +113,7 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
         notes: data.notes || "",
         metadata: {
           invoiceType: "group",
+          serviceType: data.serviceType,
           employeeNames: employeeNames,
           employeeSalaries: employeeSalaries, // Store individual salaries
           employeeIds: employeeIds, // Store employee IDs/codes
@@ -118,36 +140,36 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
     },
   });
 
-  const handleAddEmployee = () => {
-    const currentEmployees = form.getValues("employees") || [];
-    form.setValue("employees", [...currentEmployees, { name: "", employeeId: "", salary: "" }]);
-  };
-
-  const handleRemoveEmployee = (index: number) => {
-    const currentEmployees = form.getValues("employees") || [];
-    form.setValue("employees", currentEmployees.filter((_, i) => i !== index));
-  };
-
-  const handleEmployeeChange = (index: number, field: 'name' | 'employeeId' | 'salary', value: string) => {
-    const currentEmployees = form.getValues("employees") || [];
-    const newEmployees = [...currentEmployees];
-    newEmployees[index][field] = value;
-
-    // Auto-fill salary when name matches a team member
-    if (field === 'name' && value.trim()) {
-      const matchedMember = teamMembers.find(member =>
-        member.name.toLowerCase() === value.trim().toLowerCase()
-      );
-      if (matchedMember && matchedMember.dailySalary) {
-        newEmployees[index].salary = matchedMember.dailySalary.toString();
-      }
+  const onSubmit = (data: GroupInvoiceFormData) => {
+    setIsSubmittedAttempted(true);
+    const errors = form.formState.errors;
+    
+    // Task 2: Logic Guard
+    if (Object.keys(errors).length > 0 || !data.customerName || !data.serviceType || data.employees.some(e => !e.salary)) {
+      toast({
+        title: "هەڵە هەیە!",
+        description: "تکایە هەموو خانە سوورەکان پڕ بکەرەوە!",
+        variant: "destructive",
+      });
+      return; // STOP the process here. Do not call the backend.
     }
 
-    form.setValue("employees", newEmployees);
+    createGroupInvoiceMutation.mutate(data);
   };
 
-  const onSubmit = (data: GroupInvoiceFormData) => {
-    createGroupInvoiceMutation.mutate(data);
+  const watchEmployeeName = (index: number) => {
+    const name = form.watch(`employees.${index}.name`);
+    if (name && name.trim()) {
+      const matchedMember = teamMembers.find(member =>
+        member.name.toLowerCase() === name.trim().toLowerCase()
+      );
+      if (matchedMember && matchedMember.dailySalary) {
+        const currentSalary = form.getValues(`employees.${index}.salary`);
+        if (!currentSalary) {
+          form.setValue(`employees.${index}.salary`, matchedMember.dailySalary.toString());
+        }
+      }
+    }
   };
 
   return (
@@ -174,8 +196,43 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Customer/Job Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter customer or job name" {...field} />
+                    <Input 
+                      placeholder="Enter customer or job name" 
+                      {...field} 
+                      className={cn(
+                        "transition-all duration-200",
+                        isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                      )}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="serviceType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("invoices.serviceType")}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className={cn(
+                        "transition-all duration-200",
+                        isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                      )}>
+                        <SelectValue placeholder={t("common.pleaseSelect")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {serviceTypes.map((service) => (
+                        <SelectItem key={service.key} value={service.key}>
+                          {service.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -191,11 +248,11 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
                     <Input
                       type="date"
                       {...field}
-                      onChange={(e) => {
-                        console.log("Group list date changed:", e.target.value);
-                        field.onChange(e.target.value);
-                      }}
                       value={field.value || ""}
+                      className={cn(
+                        "transition-all duration-200",
+                        isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                      )}
                     />
                   </FormControl>
                   <FormMessage />
@@ -211,7 +268,7 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleAddEmployee}
+                  onClick={() => append({ name: "", employeeId: "", salary: "" })}
                   className="h-8"
                 >
                   <Plus className="h-3 w-3 mr-1" />
@@ -220,37 +277,76 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
               </div>
 
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                {employees.map((employee, index) => (
-                  <div key={index} className="flex gap-2 items-start p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                {fields.map((employee, index) => (
+                  <div key={employee.id} className="flex gap-2 items-start p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
                     <div className="flex-1 space-y-2">
-                      <Input
-                        placeholder={`Employee ${index + 1} name`}
-                        value={employee.name}
-                        onChange={(e) => handleEmployeeChange(index, 'name', e.target.value)}
-                        className="border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white"
+                      <FormField
+                        control={form.control}
+                        name={`employees.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder={`Employee ${index + 1} name`}
+                                {...field}
+                                onBlur={() => {
+                                  field.onBlur();
+                                  watchEmployeeName(index);
+                                }}
+                                className={cn(
+                                  "border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white transition-all duration-200",
+                                  isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                      <Input
-                        placeholder="Employee ID/Code (optional)"
-                        value={employee.employeeId || ""}
-                        onChange={(e) => handleEmployeeChange(index, 'employeeId', e.target.value)}
-                        className="border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white"
+                      <FormField
+                        control={form.control}
+                        name={`employees.${index}.employeeId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Employee ID/Code (optional)"
+                                {...field}
+                                className="border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
                       />
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Daily salary (e.g., 50.00)"
-                        value={employee.salary}
-                        onChange={(e) => handleEmployeeChange(index, 'salary', e.target.value)}
-                        className="border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white"
+                      <FormField
+                        control={form.control}
+                        name={`employees.${index}.salary`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="Daily salary (e.g., 50.00)"
+                                {...field}
+                                className={cn(
+                                  "border-purple-200 focus:border-purple-400 focus:ring-purple-400 bg-white transition-all duration-200",
+                                  isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                    {employees.length > 1 && (
+                    {fields.length > 1 && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveEmployee(index)}
+                        onClick={() => remove(index)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 mt-1"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -274,6 +370,10 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
                       min="0"
                       placeholder="0.00"
                       {...field}
+                      className={cn(
+                        "transition-all duration-200",
+                        isSubmittedAttempted && !field.value && "border-red-600 bg-red-50 animate-shake"
+                      )}
                     />
                   </FormControl>
                   <FormMessage />
@@ -288,9 +388,8 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <textarea
+                    <Input
                       placeholder="Add any notes about this invoice"
-                      rows={3}
                       {...field}
                       value={field.value || ""}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -307,6 +406,7 @@ export default function GroupInvoiceForm({ onClose }: GroupInvoiceFormProps) {
               </Button>
               <Button
                 type="submit"
+                onClick={() => setIsSubmittedAttempted(true)}
                 disabled={createGroupInvoiceMutation.isPending}
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
               >

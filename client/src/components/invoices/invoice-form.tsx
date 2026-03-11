@@ -132,11 +132,15 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="customerName"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t("invoices.customerNameLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t("invoices.customerNamePlaceholder")} {...field} />
+                    <Input 
+                      placeholder={t("invoices.customerNamePlaceholder")} 
+                      {...field} 
+                      className={fieldState.error ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,7 +150,7 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="amount"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t("invoices.amountLabel")}</FormLabel>
                   <FormControl>
@@ -156,6 +160,7 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
                       min="0"
                       placeholder={t("invoices.amountPlaceholder")}
                       {...field}
+                      className={fieldState.error ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -166,7 +171,7 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t("common.date")}</FormLabel>
                   <FormControl>
@@ -178,6 +183,7 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
                         field.onChange(e.target.value);
                       }}
                       value={field.value || ""}
+                      className={fieldState.error ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -188,13 +194,14 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="location"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t("invoices.serviceLocationLabel")}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder={t("invoices.serviceLocationPlaceholder")}
                       {...field}
+                      className={fieldState.error ? "border-red-500 focus-visible:ring-red-500" : ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -205,12 +212,12 @@ export default function InvoiceForm({ onClose }: InvoiceFormProps) {
             <FormField
               control={form.control}
               name="serviceType"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>{t("invoices.serviceType")}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className={fieldState.error ? "border-red-500 focus:ring-red-500" : ""}>
                         <SelectValue placeholder={t("common.pleaseSelect")} />
                       </SelectTrigger>
                     </FormControl>
